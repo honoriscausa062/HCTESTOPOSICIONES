@@ -19,6 +19,7 @@ export default function LoginPage() {
       return;
     }
     if (isAdminMode) {
+      // Demo admin credentials for this local-only application (no server-side auth)
       if (username === 'admin' && password === 'admin123') {
         setUser({
           id: 'admin',

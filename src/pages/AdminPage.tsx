@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit2, Trash2, X, Save, BarChart3, BookOpen, FileText, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, X, Save, BarChart3, BookOpen, FileText, HelpCircle, AlertTriangle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateId } from '../utils/helpers';
 import { Category, Test, Question } from '../types';
@@ -22,11 +22,39 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
   );
 }
 
+function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-slate-700 shadow-2xl">
+        <div className="flex items-center gap-3 mb-4">
+          <AlertTriangle className="text-yellow-400 flex-shrink-0" size={24} />
+          <p className="text-white">{message}</p>
+        </div>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { categories, tests, results, addCategory, updateCategory, deleteCategory, addTest, updateTest, deleteTest } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('categories');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   // Category state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -76,10 +104,14 @@ export default function AdminPage() {
   };
 
   const handleDeleteCategory = (id: string) => {
-    if (confirm('¿Eliminar esta categoría y todos sus tests?')) {
-      deleteCategory(id);
-      showToast('Categoría eliminada', 'success');
-    }
+    setConfirmDialog({
+      message: '¿Eliminar esta categoría y todos sus tests?',
+      onConfirm: () => {
+        deleteCategory(id);
+        showToast('Categoría eliminada', 'success');
+        setConfirmDialog(null);
+      },
+    });
   };
 
   // Test CRUD
@@ -105,10 +137,14 @@ export default function AdminPage() {
   };
 
   const handleDeleteTest = (id: string) => {
-    if (confirm('¿Eliminar este test?')) {
-      deleteTest(id);
-      showToast('Test eliminado', 'success');
-    }
+    setConfirmDialog({
+      message: '¿Eliminar este test?',
+      onConfirm: () => {
+        deleteTest(id);
+        showToast('Test eliminado', 'success');
+        setConfirmDialog(null);
+      },
+    });
   };
 
   // Question CRUD
@@ -149,9 +185,15 @@ export default function AdminPage() {
   };
 
   const handleDeleteQuestion = (questionId: string) => {
-    if (!selectedTest || !confirm('¿Eliminar esta pregunta?')) return;
-    updateTest({ ...selectedTest, questions: selectedTest.questions.filter(q => q.id !== questionId) });
-    showToast('Pregunta eliminada', 'success');
+    if (!selectedTest) return;
+    setConfirmDialog({
+      message: '¿Eliminar esta pregunta?',
+      onConfirm: () => {
+        updateTest({ ...selectedTest, questions: selectedTest.questions.filter(q => q.id !== questionId) });
+        showToast('Pregunta eliminada', 'success');
+        setConfirmDialog(null);
+      },
+    });
   };
 
   const filteredTests = testCategoryFilter
@@ -675,6 +717,15 @@ export default function AdminPage() {
 
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <ConfirmDialog
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </div>
   );
 }

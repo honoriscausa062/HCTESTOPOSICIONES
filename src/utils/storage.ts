@@ -246,8 +246,8 @@ export const getStoredState = (): AppState => {
     if (stored) {
       return JSON.parse(stored) as AppState;
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('Failed to load state from localStorage:', err);
   }
   return {
     user: null,
@@ -261,8 +261,8 @@ export const saveState = (state: Partial<AppState>): void => {
   try {
     const current = getStoredState();
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, ...state }));
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('Failed to save state to localStorage:', err);
   }
 };
 
